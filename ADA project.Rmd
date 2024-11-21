@@ -1,0 +1,176 @@
+---
+title: "ADA"
+author: "Shivani Patel"
+date: "2024-11-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(haven)
+library(tidyverse)
+Adult <- read_sav("/Users/shivani/Downloads/CHIS Adult Data 2021 .sav")
+```
+
+```{r}
+library(table1)
+CHIS_data <- Adult %>%
+  select(AF66, AC117V2, AC208, ACE8, SRSEX, OMBSRR_P1, SRAGE_P1, SMKCUR)
+```
+
+```{r}
+#Depression
+CHIS_data <- CHIS_data %>%
+  filter(AF66 != -1) %>%
+  filter(AF66 != -2) %>%
+  mutate(AF66 = case_when(
+    AF66 < 4 ~ "Frequent",
+    AF66 == 4 ~ "Infrequent",
+    AF66 == 5 ~ "Infrequent"
+  ),
+  AF66 = factor(AF66,
+                levels = c("Infrequent", "Frequent")))
+```
+
+```{r}
+#Marijuana Use
+CHIS_data <- CHIS_data %>%
+  filter(AC117V2 != -1) %>%
+  mutate(AC117V2 = case_when(
+    AC117V2 > 1 ~ "Use",
+    AC117V2 == 1 ~ "No Use"
+  ),
+  AC117V2 = factor(AC117V2,
+                levels = c("No Use", "Use")))
+```
+
+```{r}
+#Alcohol
+CHIS_data <- CHIS_data %>%
+  filter(AC208 != 2) %>%
+  filter(AC208 != 3) %>%
+  mutate(AC208 = case_when(
+    AC208 == 1 ~ "Use",
+    AC208 == -1 ~ "No Use"
+  ),
+  AC208 = factor(AC208,
+                levels = c("No Use", "Use")))
+```
+
+```{r}
+#ACES
+CHIS_data <- CHIS_data %>%
+  mutate(ACE8 = case_when(
+    ACE8 > 1 ~ "Yes",
+    ACE8 == 1 ~ "No"
+  ),
+  ACE8 = factor(ACE8,
+                levels = c("No", "Yes")))
+```
+
+```{r}
+#Smoking
+CHIS_data <- CHIS_data %>%
+  mutate(SMKCUR = case_when(
+    SMKCUR == 1 ~ "Yes",
+    SMKCUR == 2 ~ "No"
+  ),
+  SMKCUR = factor(SMKCUR,
+                levels = c("No", "Yes")))
+```
+
+```{r}
+#Gender
+CHIS_data <- CHIS_data %>%
+  mutate(SRSEX = case_when(
+    SRSEX == 1 ~ "Male",
+    SRSEX == 2 ~ "Female"
+  ),
+  SRSEX = factor(SRSEX,
+                levels = c("Male", "Female")))
+```
+
+```{r}
+#Race
+CHIS_data <- CHIS_data %>%
+  mutate(OMBSRR_P1 = case_when(
+    OMBSRR_P1 == 1 ~ "Hispanic",
+    OMBSRR_P1 == 2 ~ "White",
+    OMBSRR_P1 == 3 ~ "African American",
+    OMBSRR_P1 == 4 ~ "American Indian",
+    OMBSRR_P1 == 5 ~ "Asian",
+    OMBSRR_P1 == 6 ~ "Other"
+  ),
+  OMBSRR_P1 = factor(OMBSRR_P1,
+                levels = c("White", "Hispanic", "African American", "American Indian", "Asian", "Other")))
+```
+
+```{r}
+#Age
+CHIS_data <- CHIS_data %>%
+  mutate(SRAGE_P1 = case_when(
+    SRAGE_P1 >= 18 & SRAGE_P1 < 30 ~ "18 - 29",
+    SRAGE_P1 >= 30 & SRAGE_P1 < 40 ~ "30 - 39",
+    SRAGE_P1 >= 40 & SRAGE_P1 < 50 ~ "40 - 49",
+    SRAGE_P1 >= 50 & SRAGE_P1 < 60 ~ "50 - 59",
+    SRAGE_P1 >= 60 & SRAGE_P1 < 70 ~ "60 - 69",
+    SRAGE_P1 >= 70 & SRAGE_P1 <= 85 ~ "70 - 85"
+    ),
+    SRAGE_P1 = factor(SRAGE_P1,
+                      levels = c("18 - 29", "30 - 39", "40 - 49", "50 - 59", "60 - 69", "70 - 85")))
+```
+
+```{r}
+label(CHIS_data$AF66) <- "Depression"
+label(CHIS_data$AC117V2) <-"Marijuana Use"
+label(CHIS_data$AC208) <-"Alcohol Use"
+label(CHIS_data$ACE8) <- "Adverse Childhood Experiences"
+label(CHIS_data$SMKCUR) <- "Smoking Status"
+label(CHIS_data$SRSEX) <- "Gender"
+label(CHIS_data$OMBSRR_P1) <- "Race/Ethnicity"
+label(CHIS_data$SRAGE_P1) <- "Age"
+knitr::kable(table1(~ AC117V2 + AC208 + ACE8 + SMKCUR + SRSEX + OMBSRR_P1 + SRAGE_P1 | AF66, data = CHIS_data))
+library(magrittr)
+```
+
+#outcome. - marijuana use CHIS_data$AC117V2
+#exposure - adverse childhood exp CHIS_data$ACE8
+
+```{r}
+ACES_test <- chisq.test(table(CHIS_data$AC117V2, CHIS_data$ACE8))
+ACES_test
+Depression_test <- chisq.test(table(CHIS_data$AC117V2, CHIS_data$AF66))
+Depression_test
+alcohol_test <- chisq.test(table(CHIS_data$AC117V2, CHIS_data$AC208))
+alcohol_test
+smoking_test <- chisq.test(table(CHIS_data$AC117V2, CHIS_data$SMKCUR))
+smoking_test
+gender_test <- chisq.test(table(CHIS_data$AC117V2, CHIS_data$SRSEX))
+gender_test
+race_test <- chisq.test(table(CHIS_data$AC117V2, CHIS_data$OMBSRR_P1))
+race_test
+age_test <- chisq.test(table(CHIS_data$AC117V2, CHIS_data$SRAGE_P1))
+age_test
+```
+
+
+
+
+# Unadjusted Logistic Regression:
+
+## Exposure: ACE, Outcome: Cannabis use
+
+```{r}
+model_ACE_unadj <- glm(AC117V2 ~ ACE8, data = CHIS_data, family = binomial())
+knitr::kable(broom::tidy(model_ACE_unadj, exponentiate = TRUE, conf.int = TRUE)%>% 
+  select (-std.error, - statistic))
+```
+#unadjusted OR: ACE - 2.303 (1.547 - 3.378)
+
+
+
+
+
